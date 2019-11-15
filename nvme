@@ -70,6 +70,7 @@ None known.
 =head1 AUTHOR
 
 Kjetil Torgrim Homme <kjetil.homme@redpill-linpro.com>
+Temperature support by Air
 
 =head1 LICENSE
 
@@ -244,6 +245,20 @@ $_.type GAUGE
 $_.min 0
 EOF
     }
+    print <<'EOF';
+multigraph nvme_temperature
+graph_title NVME Temperature
+graph_order $sn_list
+graph_vlabel Temperature
+graph_category disk
+graph_info Temperature
+EOF
+    for (@sn) {
+        print <<"EOF";
+$_.label $list->{$_}->{device} temperature
+$_.type GAUGE
+EOF
+    }
 } else {
     for (@sn) {
         $list->{$_}->{smart} = smart_log($list->{$_}->{device});
@@ -269,5 +284,12 @@ EOF
         # The unit size reported is 1000 blocks.
         my $cycles = $info->{smart}->{data_units_read} * 512_000 / $info->{capacity};
         print "$_.value $cycles\n";
+    }
+    print "multigraph nvme_temperature\n";
+    for (@sn) {
+        my $info = $list->{$_};
+        my $temperature = $info->{smart}->{temperature};
+        $temperature =~ s/^(\d+).*/$1/;
+        print "$_.value $temperature\n";
     }
 }
